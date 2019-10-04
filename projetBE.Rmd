@@ -1,0 +1,54 @@
+---
+title: "Dynamique et structure spatiale des populations de crabes royaux de l'île de Kodiak"
+author: "Perrine Lequitte, Baptiste Elie"
+output: html_notebook
+---
+
+Voici une analyse des donn?es collect?es entre 1973 et 1986 sur l'île de Kodiak, disponibles [sur internet](http://ftp.uni-bayreuth.de/math/statlib/crab/)
+
+Initialisation : lecture et mise en forme des donn?es, chargement des librairies, etc.
+```{r}
+setwd("~/M2R/MOST/Projet")
+data<-read.table("survey.txt", sep='')
+names(data)=c("year","district","Station","Nbpots",
+              "Lat","Long","pr4","pr3","pr2","pr1",
+              "prmales",'postr',"fjuv","fadult")
+
+#contour des îles
+kodiak<-read.table("kodiak.txt")
+names(kodiak)=c("lat","long")
+
+#ratio lat/long= 1:1.8 en Alaska
+#longitude mesurée de Est en Ouest
+kodiak$long=-kodiak$long*1.8
+# Le m?me pb pour les données.
+data$Long=-1.8*data$Long
+
+```
+
+Les zones de pêche sont réparties en quatre districts:
+
+```{r}
+plot(kodiak$long,kodiak$lat,typ='l',
+     xlab="Longitude",ylab="Latitude",main="Kodiak King Crabs" )
+points(data$Long,data$Lat,pch='.',
+       col=data$district,cex=2.5)
+```
+Ici, on va créer une nouvelle variable nous inbformant sur la distance à la côte la plus proche:
+```{r}
+calculeDistCote <- function(lat, long){
+  #calcule la distance donnée d'un point à la cote la plus proche, en km
+  dist <- (kodiak$lat-lat)^2 + (kodiak$long - long)^2
+  return(sqrt(min(dist, na.rm=TRUE))*111)
+}
+
+data$DistCote <- apply(data[,c('Lat','Long')],1,function(L) {
+  calculeDistCote(L[[1]],L[[2]])
+  })
+```
+
+On peut ensuite faire une première analyse qualitative pour observer des différences en fonction de la distance à la côte.
+```{r}
+for (i in 7:14) plot(data$DistCote, data[,i], main=colnames(data)[[i]])
+```
+
